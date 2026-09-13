@@ -1,0 +1,107 @@
+apiVersion: storage.k8s.io/v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-onegb-pvc
+  namespace: prod
+spec:
+  resources:
+    requests:
+      storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp3
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-config
+  namespace: prod
+data:
+  MYSQL_ROOT_PASSWORD: "sql@123"
+  MYSQL_USER: "sql"
+  MYSQL_PASSWORD: "hello@123"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sql-statefulset
+  namespace: prod
+spec:
+  replicas: 2
+  serviceName: sql-svc
+  updateStrategy:
+    type: OnDelete
+  selector:
+    matchLabels:
+      app: blinkit
+  template:
+    metadata:
+      labels:
+        app: blinkit
+    spec:
+      containers:
+        - name: sql-container
+          image: mysql
+          ports:
+            - containerPort: 3306
+              name: sql-port
+          restartPolicy: OnFailure
+          volumeMounts:
+            - name: aws-eb-volume
+              mountPath: /aws-eb-onegb-volume
+            - name: db-config
+              mountPath: /dbconfig
+      volumes:
+        - name:  aws-eb-volume
+          persistentVolumeClaim:
+             claimName: my-onegb-pvc
+        - name: config-db
+          cofigMap:
+            name: db-config
+---
+apiVersion: v1 
+kind: Service 
+metadata:
+  name: sql-svc
+  namespace: prod
+spec:
+  clutserIP: None
+  selector:
+    app: blinkt
+  ports:
+    - name: sql
+      port: 3306
+      targetPort: sql-port
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  nginx
+  namespace: prod
+spec:
+  replicas: 2
+  strategy:
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 2
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: front-end
+    spec:
+      containers:
+      - image:  nginx
+        name:  nginx-container
+        resources:
+          requests:
+            cpu: "20m"
+            memory: "55Mi"
+          limits:
+            cpu: "300m"
+            memory: "150Mi"     
+        ports:
+        - containerPort:  80
+          name:  my-name
+        restartPolicy: Always
+        imagePullPolicy: Always
