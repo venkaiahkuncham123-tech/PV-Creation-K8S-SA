@@ -1,0 +1,28 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+git branch: 'main', url: 'https://github.com/venkaiahkuncham123-tech/PV-Creation-K8S-SA.git'            }
+        }
+        stage('Chnage Directory and K8S') {
+            steps {
+                dir('./storage-sa'){
+script {
+    kubeconfig(credentialsId: 'K8S-SA-Prod-Token', serverUrl:'https://172.31.26.159:6443') {
+    sh 'kubectl apply -f pv-deploy-sa.yaml'
+    sh 'kubectl get pods -n prod'
+    sh 'kubectl get pv -n prod'
+    sh 'kubectl get pvc -n prod'
+    sh 'kubectl get sc'
+    sh 'kubectl get statefulset -n prod'
+   
+    }
+}
+}
+    }
+        }
+        
+    }
+}
