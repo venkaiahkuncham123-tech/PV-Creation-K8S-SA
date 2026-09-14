@@ -45,18 +45,17 @@ spec:
           ports:
             - containerPort: 3306
               name: sql-port
-          restartPolicy: OnFailure
           volumeMounts:
             - name: aws-eb-volume
               mountPath: /aws-eb-onegb-volume
-            - name: db-config
+            - name: config-db
               mountPath: /dbconfig
       volumes:
         - name:  aws-eb-volume
           persistentVolumeClaim:
              claimName: my-onegb-pvc
         - name: config-db
-          cofigMap:
+          configMap:
             name: db-config
 ---
 apiVersion: v1 
@@ -65,9 +64,9 @@ metadata:
   name: sql-svc
   namespace: prod
 spec:
-  clutserIP: None
+  clusterIP: None
   selector:
-    app: blinkt
+    app: blinkit
   ports:
     - name: sql
       port: 3306
@@ -83,7 +82,7 @@ spec:
   strategy:
     rollingUpdate:
       maxSurge: 2
-      maxUnavailable: 2
+      maxUnavailable: 0
     type: RollingUpdate
   template:
     metadata:
