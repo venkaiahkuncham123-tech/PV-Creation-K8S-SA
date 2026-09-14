@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+git branch: 'main', url: 'https://github.com/venkaiahkuncham123-tech/PV-Creation-K8S-SA.git'            }
+        }
+        stage('Chnage Directory and K8S') {
+            steps {
+                dir('./storage-sa'){
+script {
+    kubeconfig(credentialsId: 'K8S-SA-Prod-Token', serverUrl:'https://172.31.26.159:6443') {
+   sh  'kubectl delete -f pv-deploy-sa.yaml'
+   
+    }
+}
+}
+    }
+        }
+    stage( 'sleep stage'){
+        steps {
+            sleep time: 2, unit: 'MINUTES'
+        }
+    }
+    
+    stage('verifying pods'){
+        steps{
+            sh 'kubectl get pv -n prod'
+            sh 'kubectl get pvc -n prod'
+            sh 'kubectl get pods -n prod'
+        }
+    }
+        
+    }
+}
